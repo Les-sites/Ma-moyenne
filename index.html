@@ -75,7 +75,7 @@
                 </div>
                 <div class="glass-card px-6 py-4 shadow-xl flex-1 md:flex-none text-center border-l-4 border-l-emerald-500">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Objectif Visé</span>
-                    <input type="number" id="target-input" value="15" step="0.5" onchange="updateTarget()" class="bg-transparent text-2xl font-black text-emerald-500 outline-none w-16 text-center">
+                    <input type="number" id="target-input" step="0.5" oninput="updateTarget()" class="bg-transparent text-2xl font-black text-emerald-500 outline-none w-16 text-center">
                 </div>
             </div>
         </div>
@@ -177,9 +177,10 @@
         }
 
         function updateTarget() {
-            target = parseFloat(document.getElementById('target-input').value) || 10;
+            const val = document.getElementById('target-input').value;
+            target = parseFloat(val) || 10;
             localStorage.setItem('mon-objectif', target);
-            render();
+            calculateAverages(); // Met à jour les badges sans re-render la liste
         }
 
         function save() {
@@ -202,9 +203,6 @@
             }
             matieres[index][field] = value;
             localStorage.setItem('mes-notes-v2', JSON.stringify(matieres));
-            
-            // On ne fait pas un render() complet pour ne pas perdre le focus pendant la frappe
-            // Mais on recalcule la moyenne
             calculateAverages();
         }
 
@@ -351,12 +349,15 @@
                 document.body.className = 'dark';
                 document.getElementById('theme-icon').textContent = '☀️';
             }
+            // Appliquer l'objectif sauvegardé au champ input
+            document.getElementById('target-input').value = target;
+            
             initChart();
             updateChartStyle();
         };
     </script>
 </body>
 </html>
-</html>
  
+
 
