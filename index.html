@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Calculateur de moyenne scolaire avec conseils par Intelligence Artificielle">
+    <title>Calculateur de Moyenne Pro & IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #liste-matieres::-webkit-scrollbar {
+            width: 4px;
+        }
+        #liste-matieres::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .ai-glow {
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); }
+            to { box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Tableau de Bord Scolaire</h1>
+                <p class="text-slate-500">Suivi des performances et conseils IA</p>
+            </div>
+            <div id="moyenne-badge" class="px-6 py-3 rounded-2xl bg-white shadow-sm border border-slate-200 text-center min-w-[180px]">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Moyenne Générale</span>
+                <div id="moyenne-generale" class="text-3xl font-black text-indigo-600">-- / 20</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Saisie -->
+            <div class="space-y-6">
+                <div class="glass-card p-6 rounded-3xl shadow-xl border border-white">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"/></svg>
+                        Nouvelle Matière
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1 tracking-wider">Nom de la matière</label>
+                            <input type="text" id="nom-matiere" placeholder="ex: Mathématiques" 
+                                class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1 tracking-wider">Moyenne</label>
+                                <input type="number" id="moy-matiere" placeholder="10" step="0.1" min="0" max="20"
+                                    class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1 tracking-wider">Coeff.</label>
+                                <input type="number" id="coeff-matiere" value="1" step="0.5" min="0.1"
+                                    class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            </div>
+                        </div>
+                        <button onclick="ajouterMatiere()" 
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-200 active:scale-[0.98]">
+                            Ajouter au relevé
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest ml-2 mb-3">Vos Matières</h3>
+                    <div id="liste-matieres" class="space-y-3 max-h-[450px] overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+
+            <!-- Analyse & Graphique -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="glass-card p-6 rounded-3xl shadow-xl">
+                    <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Analyse Graphique
+                    </h2>
+                    <div class="relative h-[320px]">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl shadow-xl border-t-4 border-t-indigo-500 relative overflow-hidden ai-glow">
+                    <div class="flex items-center justify-between mb-4 relative">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span class="p-2 bg-indigo-100 rounded-lg text-xl">🤖</span>
+                            Conseiller IA GitHub
+                        </h2>
+                        <button onclick="genererConseilsIA()" id="btn-ia"
+                            class="text-xs bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-indigo-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-md">
+                            <span>Analyser mon profil</span>
+                        </button>
+                    </div>
+                    <div id="ai-response" class="text-slate-700 text-sm leading-relaxed min-h-[120px] p-5 bg-white rounded-2xl border border-slate-100 italic shadow-inner">
+                        <p class="text-slate-400">Modifiez vos moyennes et cliquez sur analyser pour obtenir une stratégie personnalisée par l'IA...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+        let matieres = [];
+        let chart = null;
+
+        function initChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Moyenne',
+                        data: [],
+                        backgroundColor: [],
+                        borderColor: [],
+                        borderWidth: 2,
+                        borderRadius: 12,
+                        barThickness: 'flex'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 20, grid: { color: '#e2e8f0', borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error('API Error');
+                return await response.json();
+            } catch (err) {
+                if (retries <= 0) throw err;
+                await new Promise(r => setTimeout(r, backoff));
+                return fetchWithRetry(url, options, retries - 1, backoff * 2);
+            }
+        }
+
+        async function genererConseilsIA() {
+            if (matieres.length === 0) return;
+            const btn = document.getElementById('btn-ia');
+            const responseDiv = document.getElementById('ai-response');
+            
+            btn.disabled = true;
+            responseDiv.innerHTML = `<div class="flex flex-col items-center py-4"><div class="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div><p class="mt-2 text-xs font-bold text-indigo-600 uppercase">Consultation de l'IA...</p></div>`;
+
+            const prompt = `Voici mes notes : ${matieres.map(m => `${m.nom}: ${m.moyenne}/20`).join(', ')}. Analyse ces résultats brièvement : 1 point fort, 1 point faible à améliorer en priorité, et un conseil de méthode. Réponds en français.`;
+
+            try {
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "L'IA est occupée.";
+                responseDiv.innerHTML = `<div class="prose prose-sm text-slate-700 font-medium">${text.replace(/\n/g, '<br>')}</div>`;
+            } catch (error) {
+                responseDiv.innerHTML = '<span class="text-red-500">Erreur réseau. Réessayez.</span>';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function ajouterMatiere() {
+            const nom = document.getElementById('nom-matiere').value.trim();
+            const moy = parseFloat(document.getElementById('moy-matiere').value);
+            const coeff = parseFloat(document.getElementById('coeff-matiere').value);
+            if (!nom || isNaN(moy) || moy < 0 || moy > 20) return;
+
+            matieres.push({ id: Date.now(), nom, moyenne: moy, coefficient: coeff || 1 });
+            document.getElementById('nom-matiere').value = '';
+            document.getElementById('moy-matiere').value = '';
+            render();
+        }
+
+        function mettreAJourNote(id, val) {
+            const idx = matieres.findIndex(m => m.id === id);
+            if (idx !== -1) {
+                let n = parseFloat(val) || 0;
+                matieres[idx].moyenne = Math.min(20, Math.max(0, n));
+                updateStats();
+            }
+        }
+
+        function supprimerMatiere(id) {
+            matieres = matieres.filter(m => m.id !== id);
+            render();
+        }
+
+        function updateStats() {
+            let pts = 0, cfs = 0;
+            matieres.forEach(m => { pts += m.moyenne * m.coefficient; cfs += m.coefficient; });
+            const mG = cfs > 0 ? (pts / cfs).toFixed(2) : "--";
+            const badge = document.getElementById('moyenne-generale');
+            badge.textContent = `${mG} / 20`;
+            badge.className = `text-3xl font-black mt-1 ${mG !== "--" && parseFloat(mG) >= 10 ? 'text-green-600' : 'text-red-600'}`;
+
+            chart.data.labels = matieres.map(m => m.nom);
+            chart.data.datasets[0].data = matieres.map(m => m.moyenne);
+            chart.data.datasets[0].backgroundColor = matieres.map(m => m.moyenne >= 10 ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)');
+            chart.data.datasets[0].borderColor = matieres.map(m => m.moyenne >= 10 ? '#16a34a' : '#dc2626');
+            chart.update('none');
+        }
+
+        function render() {
+            const list = document.getElementById('liste-matieres');
+            list.innerHTML = '';
+            matieres.forEach(m => {
+                const d = document.createElement('div');
+                d.className = "bg-white p-3 px-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center";
+                d.innerHTML = `
+                    <div class="flex-1"><div class="font-bold text-slate-800 text-sm truncate max-w-[120px]">${m.nom}</div><div class="text-[10px] text-slate-400 font-bold uppercase">Coeff. ${m.coefficient}</div></div>
+                    <div class="flex items-center gap-3">
+                        <input type="number" value="${m.moyenne}" step="0.1" oninput="mettreAJourNote(${m.id}, this.value)" class="w-16 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-center font-black">
+                        <button onclick="supprimerMatiere(${m.id})" class="text-slate-300 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round"/></svg></button>
+                    </div>`;
+                list.appendChild(d);
+            });
+            updateStats();
+        }
+        window.onload = initChart;
+    </script>
+</body>
+</html>
